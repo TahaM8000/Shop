@@ -1,13 +1,16 @@
-# from rest_framework.response import Response
-# from rest_framework.decorators import api_view, permission_classes
-# from rest_framework.permissions import IsAdminUser, AllowAny, IsAuthenticated
-# from rest_framework import status
-# from random import randint
-# from django.contrib.auth.hashers import check_password
-# from rest_framework.decorators import api_view, permission_classes
-# from rest_framework.permissions import AllowAny
-# from django.contrib.auth import authenticate, login
-# from django.http import JsonResponse
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAdminUser, AllowAny, IsAuthenticated
+from rest_framework import status
+from random import randint
+from django.contrib.auth.hashers import check_password
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from django.contrib.auth import authenticate, login
+from django.http import JsonResponse
+
+
+from .serializers import *
 
 # -------------------------------------------------------------------------------------------------------------------------------
 """
@@ -23,24 +26,52 @@ api's in api_views.py :
 
 """
 # -------------------------------------------------------------------------------------------------------------------------------
-# @api_view(['POST'])
-# @permission_classes([AllowAny])
-# def user_create(request):
-#     info = UserSerializersValid(data=request.data)
-#     code = randint(1000, 9999)
-#
-#     if info.is_valid():
-#         User(nationalCode=info.validated_data['nationalCode'],
-#              phoneNumber=info.validated_data['phoneNumber'],
-#              is_active=False,
-#              code=code).save()
-#         # send Code to User
-#         # temp = Sms_link.replace("phoneNumber",info.validated_data['phoneNumber'])
-#         # temp = temp.replace("code",str(code))
-#         # response = requests.get(temp)
-#         return Response({'message': 'ok', 'code': f'{code}'}, status=status.HTTP_201_CREATED)
-#     else:
-#         return Response(info.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def user_create(request):
+    info = UserSerializersValid(data=request.data)
+    code = randint(1000, 9999)
+
+    if info.is_valid():
+        User(phoneNumber=info.validated_data['phoneNumber'],
+             is_active=False,
+             code=code).save()
+        # send Code to User
+        # temp = Sms_link.replace("phoneNumber",info.validated_data['phoneNumber'])
+        # temp = temp.replace("code",str(code))
+        # response = requests.get(temp)
+        return Response({'message': 'ok', 'code': f'{code}'}, status=status.HTTP_201_CREATED)
+    else:
+        return Response(info.errors, status=status.HTTP_400_BAD_REQUEST)
+# -------------------------------------------------------------------------------------------------------------------------------
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def user_update(request, phoneNumber):
+    try:
+        user = User.objects.get(phoneNumber=phoneNumber)
+    except User.DoesNotExist:
+        return Response({'error': 'this user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    # info = UserSerializersUpdate(user, data=request.data)
+    info = UserSerializersUpdate(data=request.data)
+
+    if info.is_valid():
+        user.firstName = info.validated_data['firstName']
+        user.lastName = info.validated_data['lastName']
+        user.is_active = True
+        user.set_password(info.validated_data['password'])
+
+        # cart = Cart(user=user)
+        # cart.save()
+        # user.cart = cart
+        # department = Department(user=user)
+        # department.save()
+        # user.department = department
+
+        user.save()
+
+        return Response({'message': 'ok is updated'}, status=status.HTTP_200_OK)
+    else:
+        return Response(info.errors, status=status.HTTP_400_BAD_REQUEST)
 # # -------------------------------------------------------------------------------------------------------------------------------
 # @api_view(['POST'])
 # @permission_classes([AllowAny])
@@ -100,42 +131,6 @@ api's in api_views.py :
 #         # response = requests.get(temp)
 #         return Response({'message': 'ok', 'code': f'{code}'}, status=status.HTTP_201_CREATED)
 #     else:
-#         return Response(info.errors, status=status.HTTP_400_BAD_REQUEST)
-# # -------------------------------------------------------------------------------------------------------------------------------
-# @api_view(['POST'])
-# @permission_classes([AllowAny])
-# def user_update(request, phoneNumber):
-#     try:
-#         user = User.objects.get(phoneNumber=phoneNumber)
-#     except User.DoesNotExist:
-#         return Response({'error': 'this user does not exist'}, status=status.HTTP_404_NOT_FOUND)
-#     # info = UserSerializersUpdate(user, data=request.data)
-#     info = UserSerializersUpdate(data=request.data)
-#
-#     if info.is_valid():
-#         user.firstName = info.validated_data['firstName']
-#         user.lastName = info.validated_data['lastName']
-#         grade = info.validated_data['grade']
-#         VALIDATION_CODE_FRONT = info.validated_data['VALIDATION_CODE']
-#         user.grade_obj = Grade.objects.get(title=grade)
-#         user.grade = user.grade_obj.title
-#         user.is_active = True
-#         user.set_password(info.validated_data['password'])
-#         print(VALIDATION_CODE_FRONT)
-#         print(VALIDATION_CODE)
-#         if VALIDATION_CODE_FRONT == VALIDATION_CODE:
-#             cart = Cart(user=user)
-#             cart.save()
-#             user.cart = cart
-#             department = Department(user=user)
-#             department.save()
-#             user.department = department
-#             user.save()
-#             return Response({'message': 'ok is updated'}, status=status.HTTP_200_OK)
-#         else:
-#             return Response({'message': 'Validet Token is NOT True!'}, status=status.HTTP_400_BAD_REQUEST)
-#     else:
-#         print("what")
 #         return Response(info.errors, status=status.HTTP_400_BAD_REQUEST)
 # # -------------------------------------------------------------------------------------------------------------------------------
 # @api_view(['GET'])
